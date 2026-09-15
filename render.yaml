@@ -1,0 +1,36 @@
+# Render.com konfiguratsiyasi — https://render.com
+#
+# Bu faylni Render "Blueprint" sifatida o'qiydi: repo ulansa, servis o'zi yaratiladi.
+# Maxfiy qiymatlar (BOT_TOKEN, DATABASE_URL) bu yerda YOZILMAYDI — ular Render
+# panelidagi Environment bo'limiga qo'lda kiritiladi (sync: false shuni bildiradi).
+services:
+  - type: web
+    name: tortbot
+    runtime: node
+    plan: free
+    region: frankfurt # O'zbekistonga eng yaqin tekin region
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Webhook rejimi: tekin planda bot doim ishlab turmaydi, shuning uchun
+      # polling emas, webhook kerak (Telegram o'zi so'rov yuboradi).
+      - key: BOT_MODE
+        value: webhook
+      - key: TZ
+        value: Asia/Tashkent
+      - key: LOG_LEVEL
+        value: info
+      # --- Quyidagilar Render panelida to'ldiriladi ---
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL # Neon connection string
+        sync: false
+      - key: WEBHOOK_URL # masalan: https://tortbot.onrender.com
+        sync: false
+      - key: ADMIN_USER_ID
+        sync: false
+      - key: ADMIN_GROUP_ID
+        sync: false
