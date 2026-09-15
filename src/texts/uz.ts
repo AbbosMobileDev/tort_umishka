@@ -7,6 +7,9 @@ import type { Order, OrderStatus } from '../types.js';
  * Kodda hardcode qilingan matn bo'lmasin (PRD 11.3).
  */
 export const t = {
+  // --- bot buyruqlari (Telegram menyusi)
+  cmdStart: 'Boshlash',
+
   // --- umumiy tugmalar
   btnOrder: '🎂 Buyurtma berish',
   btnMyOrders: '📋 Mening buyurtmalarim',

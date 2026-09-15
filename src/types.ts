@@ -75,7 +75,12 @@ export type CustomerState =
   | 'PAYMENT'
   | 'ADMIN_PRICE_INPUT'
   | 'ADMIN_QUOTA_INPUT'
-  | 'ADMIN_BLOCK_DATE_INPUT';
+  | 'ADMIN_BLOCK_DATE_INPUT'
+  | 'ADMIN_UNBLOCK_DATE_INPUT'
+  | 'ADMIN_PROD_NAME'
+  | 'ADMIN_PROD_PHOTO'
+  | 'ADMIN_PROD_PRICE'
+  | 'ADMIN_CAT_NAME';
 
 export interface Draft {
   categoryId?: number;
@@ -96,6 +101,12 @@ export interface Draft {
   orderId?: number;
   /** admin uchun vaqtinchalik kontekst */
   targetProductId?: number;
+  /** admin: yangi mahsulot qoralamasi (nomi -> kategoriya -> rasm -> narx) */
+  newProduct?: {
+    name?: string;
+    categoryId?: number;
+    photoFileId?: string | null;
+  };
   history?: CustomerState[];
 }
 

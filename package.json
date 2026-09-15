@@ -12,6 +12,7 @@
     "dev": "tsx watch src/index.ts",
     "seed": "tsx src/db/seed.ts",
     "smoke": "tsx scripts/smoke.ts",
+    "smoke:panel": "tsx scripts/panel-sim.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "reseed": "node scripts/reset-db.mjs && tsx src/db/seed.ts",

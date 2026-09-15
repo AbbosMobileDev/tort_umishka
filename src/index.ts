@@ -37,7 +37,7 @@ async function main(): Promise<void> {
   }
 
   const bot = createBot(shop, config.botToken);
-  await setBotCommands(bot);
+  await setBotCommands(bot, shop);
   startJobs(shop.timezone);
 
   if (config.mode === 'webhook') {

@@ -26,14 +26,18 @@ Mahsulot talablari: `docs/PRD.md`. Har o'zgartirishdan oldin shu hujjatga qarang
   Ikkalasi ham bir xil SQL qabul qiladi, shuning uchun kod muhitga bog'liq emas.
 - `src/bot/customer.ts` — state machine. Holat `sessions` jadvalida saqlanadi, `draft.history`
   orqali "Orqaga" ishlaydi.
-- `src/bot/admin.ts` — customer handlerdan **oldin** ro'yxatdan o'tadi, chunki `ADMIN_*`
-  holatidagi matnlarni u ushlashi kerak.
+- `src/bot/panel.ts` — admin panel (do'kon egasining shaxsiy chati): buyurtmalar,
+  katalog, hisobot, sozlamalar. Har bo'lim bitta xabarni tahrirlaydi (`editMessageText`),
+  shuning uchun eski ekranlar chatda to'planib qolmaydi. Callback prefiksi — `p:`.
+- `src/bot/admin.ts` — admin guruh tomoni: buyruqlar va guruhdagi karta tugmalari (`a:`).
+- Ro'yxatdan o'tish tartibi: `panel` -> `admin` -> `customer`. Panel `ADMIN_*` holatidagi
+  matnlarni va admin uchun `/start` ni mijoz handleridan oldin ushlashi kerak.
+- `src/bot/guard.ts` — `isAdmin` (guruh ham) va `isPanelUser` (faqat shaxsiy chat).
 - `src/services/availability.ts` — `computeAvailableDates()` sof funksiya (bazasiz, testlanadi),
   `getAvailableDates()` uni baza bilan bog'laydi.
 
 ## Keyingi sprintlar
 
-- Sprint 4 qoldig'i: `/menu` orqali yangi mahsulot qo'shish (nomi → kategoriya → rasm → narx)
 - Sprint 5: ko'p do'kon — tokenlar `shops.bot_token` dan, webhook router `/webhook/:shopId`
 - v1.1: Payme/Click — `services/payments/` interfeysi (`createInvoice`, `checkStatus`,
   `handleCallback`) orqali, merchant hisobi do'konning o'ziga tegishli bo'lsin
@@ -44,6 +48,7 @@ Mahsulot talablari: `docs/PRD.md`. Har o'zgartirishdan oldin shu hujjatga qarang
 
 ```
 npm run typecheck
-npm test          # 17 ta test: narx, slot mantiqi, baza tranzaksiyalari
-npm run smoke     # Telegramsiz: katalog, narx, buyurtma va xabar matnlari terminalda
+npm test            # 25 ta test: narx, slot mantiqi, baza tranzaksiyalari, katalog va hisobot
+npm run smoke       # Telegramsiz: katalog, narx, buyurtma va xabar matnlari terminalda
+npm run smoke:panel # Telegramsiz: admin panel oqimlari (soxta update'lar handlerlardan o'tadi)
 ```

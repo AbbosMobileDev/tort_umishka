@@ -275,7 +275,30 @@ Ertaga: 5 buyurtma
 | `/yopish` | Ma'lum sanani band qilish (dam olish) |
 | `/hisobot` | Haftalik/oylik statistika |
 
-**Mahsulot qo'shish oqimi:** nomi → kategoriya → rasm → 1 kg narxi → ichlik variantlari → saqlash. Har qadam alohida xabar, tugmalar bilan.
+**Mahsulot qo'shish oqimi:** nomi → kategoriya → rasm → 1 kg narxi → saqlash. Har qadam alohida xabar, tugmalar bilan. Ichlik/bezak variantlari shu kategoriyadagi mavjud mahsulotdan nusxalanadi.
+
+### 8.5 Admin panel (shaxsiy chat)
+
+Guruhda kartalar oqimda ko'milib ketadi, shuning uchun do'kon egasi uchun botning o'zi
+panel bo'lib ochiladi: `ADMIN_USER_ID` li foydalanuvchi `/start` bosganda doimiy menyu
+chiqadi — **📥 Buyurtmalar · 🍰 Katalog · 📊 Hisobot · ⚙️ Sozlamalar · 👤 Mijoz rejimi**.
+
+Panelning qoidasi: har bo'lim **bitta xabarni tahrirlab** yangilanadi. Ro'yxat → karta →
+holat o'zgarishi — hammasi o'sha xabar ichida, chatda eski ekranlar qolmaydi.
+
+| Bo'lim | Nima qiladi |
+|---|---|
+| 📥 Buyurtmalar | 🆕 Yangi, 🔥 Jarayonda, 📅 Bugun, ➡️ Ertaga, 🗃 Arxiv — har biri sanog'i bilan. Kartadagi tugmalar holatni o'zgartiradi, mijozga xabar ketadi, guruhdagi karta ham yangilanadi |
+| 🍰 Katalog | Mahsulot qo'shish, narx, sotuvda bor/yo'q, butunlay o'chirish (tasdiq so'raladi) |
+| 📊 Hisobot | Bugun / 7 kun / 30 kun / kelgusi buyurtmalar — jamlanma va **CSV fayl** (Excel, Google Sheets) |
+| ⚙️ Sozlamalar | Kunlik limit, sanani yopish va qayta ochish |
+
+Yangi buyurtma tushganda guruhga to'liq karta, adminning shaxsiy chatiga esa qisqa
+bildirishnoma (`🔔 Yangi buyurtma #128` + «Ko'rish» tugmasi) yuboriladi — bosilganda
+o'sha xabarning o'zida to'liq karta ochiladi.
+
+Mahsulot o'chirilsa, eski buyurtmalar o'zgarmaydi — ularda nomi va narxi
+`product_snapshot` ichida saqlangan.
 
 ---
 

@@ -158,6 +158,99 @@ export async function listProductOptions(
   }));
 }
 
+export async function listAllCategories(shopId: number): Promise<Category[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT id, name FROM categories WHERE shop_id = $1 ORDER BY sort_order, id`,
+    [shopId],
+  );
+  return rows.map((r) => ({ id: num(r.id), name: r.name }));
+}
+
+export async function createCategory(shopId: number, name: string): Promise<Category> {
+  const db = await getDb();
+  const rows = await db.query(
+    `INSERT INTO categories (shop_id, name, sort_order)
+     VALUES ($1, $2, COALESCE((SELECT MAX(sort_order) + 1 FROM categories WHERE shop_id = $1), 0))
+     RETURNING id, name`,
+    [shopId, name],
+  );
+  return { id: num(rows[0].id), name: rows[0].name };
+}
+
+export interface NewProductInput {
+  categoryId: number;
+  name: string;
+  pricePerKg: number;
+  photoFileId: string | null;
+  description?: string | null;
+}
+
+export async function createProduct(shopId: number, input: NewProductInput): Promise<Product> {
+  const db = await getDb();
+  const rows = await db.query(
+    `INSERT INTO products (shop_id, category_id, name, description, photo_file_id, price_per_kg, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6,
+             COALESCE((SELECT MAX(sort_order) + 1 FROM products
+                        WHERE shop_id = $1 AND category_id = $2), 0))
+     RETURNING *`,
+    [
+      shopId,
+      input.categoryId,
+      input.name,
+      input.description ?? null,
+      input.photoFileId,
+      input.pricePerKg,
+    ],
+  );
+  return mapProduct(rows[0]);
+}
+
+/**
+ * Mahsulotni butunlay o'chiradi (variantlari CASCADE bilan ketadi).
+ * Eski buyurtmalar product_snapshot ichida saqlangani uchun ular o'zgarmaydi.
+ */
+export async function deleteProduct(shopId: number, productId: number): Promise<boolean> {
+  const db = await getDb();
+  const rows = await db.query(
+    `DELETE FROM products WHERE shop_id = $1 AND id = $2 RETURNING id`,
+    [shopId, productId],
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Yangi mahsulotga shu kategoriyadagi eng to'liq mahsulotning variantlarini (ichlik,
+ * bezak) nusxalaydi — admin har safar qo'lda kiritmasin.
+ */
+export async function copyCategoryOptions(
+  shopId: number,
+  categoryId: number,
+  toProductId: number,
+): Promise<number> {
+  const db = await getDb();
+  const src = await db.query(
+    `SELECT po.product_id AS pid, COUNT(*) AS c
+       FROM product_options po
+       JOIN products p ON p.id = po.product_id AND p.shop_id = po.shop_id
+      WHERE po.shop_id = $1 AND p.category_id = $2 AND p.id <> $3
+      GROUP BY po.product_id
+      ORDER BY c DESC, po.product_id
+      LIMIT 1`,
+    [shopId, categoryId, toProductId],
+  );
+  if (!src[0]) return 0;
+  const rows = await db.query(
+    `INSERT INTO product_options
+       (shop_id, product_id, group_name, option_name, extra_price, price_type, sort_order)
+     SELECT shop_id, $3::int, group_name, option_name, extra_price, price_type, sort_order
+       FROM product_options WHERE shop_id = $1 AND product_id = $2
+     RETURNING id`,
+    [shopId, num(src[0].pid), toProductId],
+  );
+  return rows.length;
+}
+
 /* -------------------------------------------------------------- customers */
 
 function mapCustomer(r: any): Customer {
@@ -644,6 +737,55 @@ export async function setAdminMessageId(
     orderId,
     messageId,
   ]);
+}
+
+/** Panel ro'yxatlari uchun: berilgan holatdagi buyurtmalar. */
+export async function listOrdersByStatuses(
+  shopId: number,
+  statuses: OrderStatus[],
+  sort: 'soon' | 'recent' = 'soon',
+  limit = 20,
+): Promise<Order[]> {
+  if (!statuses.length) return [];
+  const db = await getDb();
+  const orderBy =
+    sort === 'recent'
+      ? 'o.created_at DESC'
+      : 'o.pickup_date, o.pickup_time_slot, o.order_number';
+  const rows = await db.query(
+    `${ORDER_SELECT} WHERE o.shop_id = $1 AND o.status = ANY($2::text[])
+     ORDER BY ${orderBy} LIMIT $3`,
+    [shopId, statuses, limit],
+  );
+  return rows.map(mapOrder);
+}
+
+/** Holat -> buyurtmalar soni (panel tugmalaridagi raqamlar uchun). */
+export async function countOrdersByStatus(shopId: number): Promise<Record<string, number>> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT status, COUNT(*) AS c FROM orders WHERE shop_id = $1 GROUP BY status`,
+    [shopId],
+  );
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.status] = num(r.c);
+  return out;
+}
+
+/** Hisobot uchun: berilgan sana oralig'idagi barcha buyurtmalar (olish sanasi bo'yicha). */
+export async function listOrdersInRange(
+  shopId: number,
+  from: string,
+  to: string,
+): Promise<Order[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `${ORDER_SELECT} WHERE o.shop_id = $1 AND o.pickup_date BETWEEN $2::date AND $3::date
+       AND o.status <> 'DRAFT'
+     ORDER BY o.pickup_date, o.pickup_time_slot, o.order_number`,
+    [shopId, from, to],
+  );
+  return rows.map(mapOrder);
 }
 
 export async function getReport(
