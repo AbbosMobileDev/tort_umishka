@@ -9,7 +9,9 @@ services:
     runtime: node
     plan: free
     region: frankfurt # O'zbekistonga eng yaqin tekin region
-    buildCommand: npm ci && npm run build
+    # Render NODE_ENV=production qo'yadi, oddiy `npm ci` esa bunda devDependencies ni
+    # o'tkazib yuboradi va build paytida `tsc` topilmaydi. --include=dev shuni hal qiladi.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /
     envVars:
