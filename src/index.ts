@@ -48,33 +48,8 @@ async function main(): Promise<void> {
   await setBotCommands(bot, shop);
   startJobs(shop.timezone);
 
-  if (config.mode === 'webhook') {
-    if (!config.webhookUrl) {
-      log.error('BOT_MODE=webhook uchun WEBHOOK_URL kerak.');
-      process.exit(1);
-    }
-    const path = `/webhook/${shop.id}`;
-    // Webhook manzili ochiq, shuning uchun Telegram har so'rovga shu maxfiy sarlavhani
-    // qo'shadi — begona POST so'rovlar soxta buyurtma yarata olmaydi.
-    const secretToken = createHash('sha256').update(config.botToken).digest('hex');
-    const handler = webhookCallback(bot, 'http', { secretToken });
-    const server = createServer((req, res) => {
-      if (req.url === path && req.method === 'POST') {
-        void handler(req, res);
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('ok'); // health check
-    });
-    server.listen(config.port, async () => {
-      log.info(`HTTP server: ${config.port}, webhook path: ${path}`);
-      await bot.api.setWebhook(`${config.webhookUrl.replace(/\/$/, '')}${path}`, {
-        secret_token: secretToken,
-        drop_pending_updates: false,
-      });
-      log.info('Webhook o\'rnatildi');
-    });
-  } else {
+  /** Polling: bot Telegramga o'zi ulanadi, tashqaridan ochiq manzil kerak emas. */
+  const startPolling = async () => {
     await bot.api.deleteWebhook({ drop_pending_updates: false }).catch(() => undefined);
     log.info(`Bot polling rejimida ishga tushmoqda — do'kon: ${shop.name}`);
     void bot
@@ -87,6 +62,43 @@ async function main(): Promise<void> {
           log.error('Polling to\'xtadi', msg);
         }
       });
+  };
+
+  if (config.mode === 'webhook') {
+    const path = `/webhook/${shop.id}`;
+    // Webhook manzili ochiq, shuning uchun Telegram har so'rovga shu maxfiy sarlavhani
+    // qo'shadi — begona POST so'rovlar soxta buyurtma yarata olmaydi.
+    const secretToken = createHash('sha256').update(config.botToken).digest('hex');
+    // Handler faqat haqiqiy webhook uchun yaratiladi: grammY webhookCallback'dan keyin
+    // bot.start() ni taqiqlaydi, biz esa WEBHOOK_URL bo'lmasa polling'ga tushamiz.
+    const handler = config.webhookUrl ? webhookCallback(bot, 'http', { secretToken }) : null;
+    const server = createServer((req, res) => {
+      if (handler && req.url === path && req.method === 'POST') {
+        void handler(req, res);
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ok'); // health check
+    });
+    server.listen(config.port, async () => {
+      log.info(`HTTP server: ${config.port}, webhook path: ${path}`);
+      // Birinchi deploy'da servis manzili hali ma'lum emas, ya'ni WEBHOOK_URL bo'sh
+      // bo'ladi. Bunda yiqilmaymiz: port band qilinadi (health check o'tadi) va bot
+      // vaqtincha polling'da ishlaydi. WEBHOOK_URL qo'yilgach webhook'ka o'tadi.
+      if (!config.webhookUrl) {
+        log.warn('WEBHOOK_URL hali qo\'yilmagan — vaqtincha polling rejimida ishlayapman.');
+        log.warn('Servis manzilini WEBHOOK_URL ga qo\'ying va qayta deploy qiling.');
+        await startPolling();
+        return;
+      }
+      await bot.api.setWebhook(`${config.webhookUrl.replace(/\/$/, '')}${path}`, {
+        secret_token: secretToken,
+        drop_pending_updates: false,
+      });
+      log.info('Webhook o\'rnatildi');
+    });
+  } else {
+    await startPolling();
   }
 
   const stop = async () => {

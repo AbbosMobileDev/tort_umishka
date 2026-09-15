@@ -49,7 +49,9 @@ ishga tushganda bo'sh bazani ko'rib, sxema va katalogni o'zi yaratadi.
    | `TZ` | `Asia/Tashkent` |
 
    `WEBHOOK_URL` ni Render servis nomini bergandan keyin bilasiz. Avval bo'sh
-   qoldirib deploy qiling, manzilni ko'ring, keyin qo'shib qayta deploy qiling.
+   qoldiring: bot yiqilmaydi, vaqtincha polling rejimida ishlab turadi va log'da
+   `WEBHOOK_URL hali qo'yilmagan` deb ogohlantiradi. Manzil paydo bo'lgach uni
+   qo'shing — qayta deploy'dan keyin webhook'ka o'tadi.
 
 5. **Create Web Service** → 2-3 daqiqa kutasiz.
 
