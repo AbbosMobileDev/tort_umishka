@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { webhookCallback } from 'grammy';
 import { config, log } from './config.js';
 import { createBot, setBotCommands } from './bot/index.js';
 import { initSchema } from './db/init.js';
 import { listActiveShops, updateShop } from './db/repo.js';
+import { runSeed } from './db/seed.js';
 import { startJobs } from './jobs/index.js';
 
 async function main(): Promise<void> {
@@ -14,9 +16,15 @@ async function main(): Promise<void> {
 
   await initSchema();
 
-  const shops = await listActiveShops();
+  let shops = await listActiveShops();
   if (!shops.length) {
-    log.error('Bazada do\'kon yo\'q. Avval `npm run seed` buyrug\'ini bajaring.');
+    // Serverda yangi baza bo'sh bo'ladi va konsol yo'q — katalog o'zi yaratiladi.
+    log.info('Baza bo\'sh — namunaviy katalog yaratilmoqda...');
+    await runSeed({ closeDb: false });
+    shops = await listActiveShops();
+  }
+  if (!shops.length) {
+    log.error('Do\'kon yaratilmadi. `npm run seed` ni qo\'lda bajaring.');
     process.exit(1);
   }
 
@@ -46,7 +54,10 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     const path = `/webhook/${shop.id}`;
-    const handler = webhookCallback(bot, 'http');
+    // Webhook manzili ochiq, shuning uchun Telegram har so'rovga shu maxfiy sarlavhani
+    // qo'shadi — begona POST so'rovlar soxta buyurtma yarata olmaydi.
+    const secretToken = createHash('sha256').update(config.botToken).digest('hex');
+    const handler = webhookCallback(bot, 'http', { secretToken });
     const server = createServer((req, res) => {
       if (req.url === path && req.method === 'POST') {
         void handler(req, res);
@@ -57,7 +68,10 @@ async function main(): Promise<void> {
     });
     server.listen(config.port, async () => {
       log.info(`HTTP server: ${config.port}, webhook path: ${path}`);
-      await bot.api.setWebhook(`${config.webhookUrl.replace(/\/$/, '')}${path}`);
+      await bot.api.setWebhook(`${config.webhookUrl.replace(/\/$/, '')}${path}`, {
+        secret_token: secretToken,
+        drop_pending_updates: false,
+      });
       log.info('Webhook o\'rnatildi');
     });
   } else {

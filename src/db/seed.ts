@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 import { config, log } from '../config.js';
 import { initSchema } from './init.js';
 import { getDb, num } from './pool.js';
@@ -78,7 +79,11 @@ const CATALOG: { category: string; options: typeof CAKE_OPTIONS; products: SeedP
   },
 ];
 
-async function seed(): Promise<void> {
+/**
+ * Katalogni yaratadi. CLI dan chaqirilganda baza ulanishi yopiladi; server ichidan
+ * (bo'sh bazada avtomatik) chaqirilganda esa ochiq qoladi — bot o'sha ulanishda ishlaydi.
+ */
+export async function runSeed({ closeDb = true }: { closeDb?: boolean } = {}): Promise<void> {
   await initSchema();
   const db = await getDb();
 
@@ -86,7 +91,7 @@ async function seed(): Promise<void> {
   if (existing.length) {
     log.info(`Do'kon allaqachon bor: ${existing[0].name} (id ${num(existing[0].id)}).`);
     log.info('Katalogni qaytadan yuklash uchun: npm run reseed');
-    await db.close();
+    if (closeDb) await db.close();
     return;
   }
 
@@ -152,10 +157,14 @@ async function seed(): Promise<void> {
   log.info(`   ${CATALOG.length} kategoriya, ${productCount} mahsulot, rasmlar bilan`);
   log.info('   Karta raqami va telefon — namunaviy, keyin o\'zgartiring');
   log.info('Endi: npm run dev');
-  await db.close();
+  if (closeDb) await db.close();
 }
 
-seed().catch((e) => {
-  log.error('Seed xatosi', e);
-  process.exit(1);
-});
+// Faqat to'g'ridan-to'g'ri ishga tushirilganda (npm run seed). Import qilinganda emas.
+const isCli = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isCli) {
+  runSeed().catch((e) => {
+    log.error('Seed xatosi', e);
+    process.exit(1);
+  });
+}
