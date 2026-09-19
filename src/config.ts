@@ -8,6 +8,14 @@ export const config = {
   localDbPath: process.env.LOCAL_DB_PATH || './data/pgdata',
   mode: (process.env.BOT_MODE || 'polling') as 'polling' | 'webhook',
   webhookUrl: process.env.WEBHOOK_URL || '',
+  /**
+   * Mini App manzili. Bo'sh bo'lsa WEBHOOK_URL ishlatiladi — mini app o'sha serverning
+   * o'zidan beriladi. Telegram faqat HTTPS manzilni qabul qiladi, shuning uchun lokal
+   * http://localhost da mini app tugmalari ko'rsatilmaydi (bot oddiy oqimda ishlaydi).
+   */
+  webappUrl: process.env.WEBAPP_URL || process.env.WEBHOOK_URL || '',
+  /** Lokal test uchun: initData siz shu ID nomidan kirish (faqat polling rejimida). */
+  webappDevUserId: process.env.WEBAPP_DEV_USER_ID ? Number(process.env.WEBAPP_DEV_USER_ID) : null,
   port: Number(process.env.PORT || 3000),
   timezone: process.env.TZ || 'Asia/Tashkent',
 };

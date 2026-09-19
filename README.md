@@ -2,10 +2,14 @@
 
 Umidaxonim shirinliklari uchun Telegram buyurtma boti.
 
-Mijoz botdan tort buyurtma qiladi (katalog → vazn → qo'shimchalar → sana va vaqt →
-yetkazish → avans to'lov), do'kon egasi esa shaxsiy chatdagi admin panel orqali
-buyurtmalarni boshqaradi: holatni o'zgartiradi, katalogni yangilaydi, hisobotni
-CSV qilib yuklab oladi.
+Mijoz bot ichidagi ilovada (Telegram Mini App) tort buyurtma qiladi: katalog → vazn →
+qo'shimchalar → sana va vaqt → yetkazish → avans to'lov. Do'kon egasi esa shaxsiy
+chatdagi admin panel orqali buyurtmalarni boshqaradi: holatni o'zgartiradi, katalogni
+yangilaydi, hisobotni CSV qilib yuklab oladi.
+
+Mini App bot bilan bir xil servisdan beriladi (`public/` + `/api/*`) — alohida hosting
+kerak emas. Manzil HTTPS bo'lmasa (masalan lokal `http://localhost`), bot avtomatik
+eski bosqichma-bosqich oqimga tushadi.
 
 ## Ishga tushirish
 
@@ -23,9 +27,10 @@ PGlite ishlatiladi. Serverda o'sha o'zgaruvchiga Neon/Supabase satri qo'yiladi.
 
 ```bash
 npm run typecheck
-npm test            # 25 ta test
+npm test            # 37 ta test
 npm run smoke       # Telegramsiz: katalog, narx, buyurtma matnlari
 npm run smoke:panel # Telegramsiz: admin panel oqimlari
+npm run dev:app     # Mini App ni brauzerda ochish (http://localhost:3000), bot ishga tushmaydi
 ```
 
 ## Hujjatlar

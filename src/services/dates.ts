@@ -54,6 +54,21 @@ export function formatDateLongUz(dateStr: string): string {
   return `${formatDateUz(dateStr)}, ${WEEKDAYS_UZ[isoWeekday(dateStr) - 1]}`;
 }
 
+/** '2026-09-15' → 'seshanba' (mini app sana kartochkalari uchun) */
+export function weekdayUz(dateStr: string): string {
+  return WEEKDAYS_UZ[isoWeekday(dateStr) - 1];
+}
+
+/** '2026-09-15' → 'sentabr' */
+export function monthUz(dateStr: string): string {
+  return MONTHS_UZ[Number(dateStr.split('-')[1]) - 1];
+}
+
+/** 1 → 'dushanba' (ish kunlari ro'yxati uchun) */
+export function weekdayNameUz(isoDay: number): string {
+  return WEEKDAYS_UZ[isoDay - 1] ?? '';
+}
+
 export function isValidDate(dateStr: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
   const [y, m, d] = dateStr.split('-').map(Number);

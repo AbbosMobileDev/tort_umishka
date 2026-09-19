@@ -62,7 +62,32 @@ INFO Baza: Postgres (DATABASE_URL)
 INFO Baza bo'sh — namunaviy katalog yaratilmoqda...
 INFO ✅ "Umidaxonim shirinliklari" yaratildi (shop_id 1)
 INFO HTTP server: 10000, webhook path: /webhook/1
+INFO Mini App: https://tortbot.onrender.com
 INFO Webhook o'rnatildi
+```
+
+---
+
+## 2.1. Mini App (bot ichidagi katalog)
+
+Mini App shu servisning o'zidan beriladi — alohida hosting, BotFather'da qo'shimcha
+sozlash kerak emas. `WEBHOOK_URL` qo'yilgan zahoti:
+
+- chat oynasidagi menyu tugmasi katalogni ochadi (`setChatMenuButton`),
+- `/start` xabari ostida "🎂 Katalogni ochish" tugmasi chiqadi.
+
+Tekshirish: botga `/start` yozing va tugmani bosing — katalog chat ichida ochilishi kerak.
+Log'da `Mini App: ...` satri manzilni ko'rsatadi.
+
+Agar boshqa domen ishlatmoqchi bo'lsangiz, `WEBAPP_URL` ga o'sha HTTPS manzilni qo'ying.
+Manzil HTTPS bo'lmasa Telegram uni qabul qilmaydi — bunda log'da
+`Mini App manzili yo'q` chiqadi va bot eski bosqichma-bosqich oqimda ishlaydi
+(hech narsa buzilmaydi).
+
+Lokalda ilovani ko'rish uchun bot kerak emas:
+
+```bash
+npm run dev:app   # http://localhost:3000
 ```
 
 ---
@@ -123,3 +148,5 @@ Do'kon egasi roziligidan keyin, panel orqali:
 | Log'da `409 Conflict` | Lokal polling ham ishlayapti | Lokalni to'xtating (4-bo'lim) |
 | Buyurtmalar yo'qoldi | `DATABASE_URL` qo'yilmagan | Neon'siz baza vaqtinchalik — o'zgaruvchini qo'shing |
 | Rasm chiqmayapti | `assets/` deploy'ga tushmagan | Repoda `assets/products/*.png` borligini tekshiring |
+| Katalog tugmasi yo'q | `WEBHOOK_URL`/`WEBAPP_URL` bo'sh yoki `http://` | HTTPS manzil qo'ying va qayta deploy qiling |
+| Ilovada "Sessiya tasdiqlanmadi" | Sahifa Telegramdan tashqarida ochilgan | Botdagi tugma orqali oching |

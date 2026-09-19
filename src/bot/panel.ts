@@ -61,6 +61,7 @@ import {
   panelSettingsKeyboard,
   panelSkipPhotoKeyboard,
 } from './keyboards.js';
+import { miniAppUrl } from '../web/url.js';
 
 const MD = { parse_mode: 'Markdown' } as const;
 
@@ -270,7 +271,7 @@ export function registerPanelHandlers(bot: Bot<BotContext>): void {
 
   bot.hears(at.btnCustomerMode, async (ctx, next) => {
     if (!(await enterPanel(ctx))) return next();
-    await ctx.reply(at.customerMode, { reply_markup: mainMenuKeyboard() });
+    await ctx.reply(at.customerMode, { reply_markup: mainMenuKeyboard(miniAppUrl()) });
   });
 
   /* --- navigatsiya */

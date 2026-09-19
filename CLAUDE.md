@@ -36,6 +36,30 @@ Mahsulot talablari: `docs/PRD.md`. Har o'zgartirishdan oldin shu hujjatga qarang
 - `src/services/availability.ts` — `computeAvailableDates()` sof funksiya (bazasiz, testlanadi),
   `getAvailableDates()` uni baza bilan bog'laydi.
 
+## Mini App
+
+Katalog va buyurtma oqimi Telegram ichidagi ilovada (Mini App) ochiladi. Ilova bot bilan
+bir xil serverdan beriladi — alohida hosting yo'q.
+
+- `public/` — frontend: build qadami yo'q, oddiy ES modullar. `index.html`, `app.css`, `app.js`.
+- `src/web/server.ts` — HTTP yo'llari: statik fayllar, `/media/*` (assets), `/api/*`,
+  `/api/photo/:id` (diskdagi rasm yoki Telegram `file_id`).
+- `src/web/api.ts` — JSON endpointlar: `bootstrap`, `dates`, `quote`, `order`, `orders`, `phone`.
+- `src/web/auth.ts` — `initData` imzosini tekshiradi. Foydalanuvchi ID siga faqat shundan
+  keyin ishoniladi.
+- `src/web/url.ts` — `miniAppUrl()`: manzil HTTPS bo'lmasa `null`, ya'ni bot eski
+  bosqichma-bosqich oqimda ishlaydi (lokal `http://localhost` da shunday bo'ladi).
+- `src/texts/webapp-uz.ts` — ilovaning barcha matnlari. Frontendda hardcode matn yo'q:
+  lug'at `bootstrap` javobida keladi, `{nom}` o'rniga qiymat `fmt()` bilan qo'yiladi.
+
+Mini App qoidalari:
+
+9. **Frontenddan kelgan har bir maydon serverda qayta tekshiriladi** (`resolveDraft`).
+   Brauzerdagi qiymatga ishonilmaydi — API ochiq internetda turadi.
+10. **Narx serverda hisoblanadi.** `public/price.js` — `src/services/pricing.ts` ning aynan
+    nusxasi va faqat ko'rsatish uchun. Biri o'zgarsa ikkinchisi ham o'zgaradi;
+    `tests/webapp-price.test.ts` ikkalasini solishtiradi.
+
 ## Keyingi sprintlar
 
 - Sprint 5: ko'p do'kon — tokenlar `shops.bot_token` dan, webhook router `/webhook/:shopId`
@@ -48,7 +72,9 @@ Mahsulot talablari: `docs/PRD.md`. Har o'zgartirishdan oldin shu hujjatga qarang
 
 ```
 npm run typecheck
-npm test            # 25 ta test: narx, slot mantiqi, baza tranzaksiyalari, katalog va hisobot
+npm test            # 37 ta test: narx (server va brauzer nusxasi), slot mantiqi, baza
+                    # tranzaksiyalari, katalog, hisobot, Mini App initData imzosi
 npm run smoke       # Telegramsiz: katalog, narx, buyurtma va xabar matnlari terminalda
 npm run smoke:panel # Telegramsiz: admin panel oqimlari (soxta update'lar handlerlardan o'tadi)
+npm run dev:app     # Mini App ni brauzerda ochish (bot ishga tushmaydi, webhook buzilmaydi)
 ```

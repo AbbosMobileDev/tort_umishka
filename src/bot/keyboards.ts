@@ -13,14 +13,20 @@ function withNav(kb: InlineKeyboard, includeBack = true): InlineKeyboard {
   return kb;
 }
 
-export function mainMenuKeyboard(): Keyboard {
-  return new Keyboard()
-    .text(t.btnOrder)
-    .row()
-    .text(t.btnMyOrders)
-    .text(t.btnContact)
-    .resized()
-    .persistent();
+/**
+ * Asosiy menyu. Mini App manzili bo'lsa birinchi tugma katalogni bot ichidagi
+ * ilovada ochadi; bo'lmasa eski bosqichma-bosqich oqim ishlaydi.
+ */
+export function mainMenuKeyboard(appUrl?: string | null): Keyboard {
+  const kb = new Keyboard();
+  if (appUrl) kb.webApp(t.btnOpenApp, appUrl);
+  else kb.text(t.btnOrder);
+  return kb.row().text(t.btnMyOrders).text(t.btnContact).resized().persistent();
+}
+
+/** /start xabari ostidagi katta tugma — ilovaga eng ko'rinadigan kirish. */
+export function openAppKeyboard(appUrl: string): InlineKeyboard {
+  return new InlineKeyboard().webApp(t.btnOpenApp, appUrl);
 }
 
 export function phoneKeyboard(): Keyboard {

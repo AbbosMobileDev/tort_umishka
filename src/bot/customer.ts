@@ -36,6 +36,7 @@ import {
   locationKeyboard,
   mainMenuKeyboard,
   navKeyboard,
+  openAppKeyboard,
   optionsKeyboard,
   phoneKeyboard,
   productSelectKeyboard,
@@ -43,6 +44,7 @@ import {
   timeKeyboard,
   weightKeyboard,
 } from './keyboards.js';
+import { miniAppUrl } from '../web/url.js';
 
 const MD = { parse_mode: 'Markdown' } as const;
 
@@ -279,7 +281,14 @@ export function registerCustomerHandlers(bot: Bot<BotContext>): void {
   bot.command('start', async (ctx) => {
     await upsertCustomer(ctx.shop.id, uid(ctx), ctx.from?.first_name, ctx.from?.username);
     await clearSession(ctx.shop.id, uid(ctx));
-    await ctx.reply(t.welcome(ctx.shop.name), { ...MD, reply_markup: mainMenuKeyboard() });
+    const app = miniAppUrl();
+    await ctx.reply(app ? t.welcomeApp(ctx.shop.name) : t.welcome(ctx.shop.name), {
+      ...MD,
+      reply_markup: mainMenuKeyboard(app),
+    });
+    // Doimiy menyu va ilovani ochadigan tugma bitta xabarga sig'maydi (Telegramda
+    // bitta xabarda bitta reply_markup), shuning uchun ikkinchi qisqa xabar.
+    if (app) await ctx.reply(t.catalogPrompt, { reply_markup: openAppKeyboard(app) });
   });
 
   /* --- asosiy menyu tugmalari (reply keyboard) */
@@ -319,7 +328,7 @@ export function registerCustomerHandlers(bot: Bot<BotContext>): void {
   bot.on('message:contact', async (ctx) => {
     const phone = ctx.message.contact.phone_number.replace(/[^\d+]/g, '');
     await setCustomerPhone(ctx.shop.id, uid(ctx), phone.startsWith('+') ? phone : `+${phone}`);
-    await ctx.reply(t.phoneSaved, { reply_markup: mainMenuKeyboard() });
+    await ctx.reply(t.phoneSaved, { reply_markup: mainMenuKeyboard(miniAppUrl()) });
     await enter(ctx, 'CATALOG', { history: [] });
   });
 
@@ -329,7 +338,7 @@ export function registerCustomerHandlers(bot: Bot<BotContext>): void {
     await stripButtons(ctx);
     await releaseHold(ctx.shop.id, uid(ctx));
     await clearSession(ctx.shop.id, uid(ctx));
-    await ctx.reply(t.cancelled, { reply_markup: mainMenuKeyboard() });
+    await ctx.reply(t.cancelled, { reply_markup: mainMenuKeyboard(miniAppUrl()) });
   });
 
   bot.callbackQuery('nav:back', async (ctx) => {
@@ -455,7 +464,7 @@ export function registerCustomerHandlers(bot: Bot<BotContext>): void {
     draft.lat = ctx.message.location.latitude;
     draft.lng = ctx.message.location.longitude;
     draft.addressText = `📍 ${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)}`;
-    await ctx.reply('✅', { reply_markup: mainMenuKeyboard() });
+    await ctx.reply('✅', { reply_markup: mainMenuKeyboard(miniAppUrl()) });
     await enter(ctx, 'ADDRESS_NOTE', draft, 'ADDRESS');
   });
 
@@ -558,7 +567,7 @@ export function registerCustomerHandlers(bot: Bot<BotContext>): void {
     const { getOrder } = await import('../db/repo.js');
     const order = await getOrder(ctx.shop.id, draft.orderId);
     if (order) await notifyAdminReceipt(order, fileId);
-    await ctx.reply(t.receiptReceived, { reply_markup: mainMenuKeyboard() });
+    await ctx.reply(t.receiptReceived, { reply_markup: mainMenuKeyboard(miniAppUrl()) });
     await clearSession(ctx.shop.id, uid(ctx));
   });
 
@@ -576,7 +585,7 @@ export function registerCustomerHandlers(bot: Bot<BotContext>): void {
           return;
         }
         await setCustomerPhone(ctx.shop.id, uid(ctx), phone.startsWith('+') ? phone : `+${phone}`);
-        await ctx.reply(t.phoneSaved, { reply_markup: mainMenuKeyboard() });
+        await ctx.reply(t.phoneSaved, { reply_markup: mainMenuKeyboard(miniAppUrl()) });
         await enter(ctx, 'CATALOG', { history: [] });
         return;
       }

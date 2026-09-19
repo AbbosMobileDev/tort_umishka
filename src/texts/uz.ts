@@ -11,6 +11,7 @@ export const t = {
   cmdStart: 'Boshlash',
 
   // --- umumiy tugmalar
+  btnOpenApp: '🎂 Katalogni ochish',
   btnOrder: '🎂 Buyurtma berish',
   btnMyOrders: '📋 Mening buyurtmalarim',
   btnContact: '☎️ Bog\'lanish',
@@ -30,6 +31,12 @@ export const t = {
     `Assalomu alaykum! 👋\n\n*${shopName}* botiga xush kelibsiz.\n\n` +
     `Bu yerda tortni o'zingiz tanlab, narxini ko'rib, bo'sh kunga buyurtma bera olasiz. ` +
     `Sotuvchini kutish shart emas.`,
+  /** Mini App yoqilganda: katalog bot ichidagi ilovada ochiladi. */
+  welcomeApp: (shopName: string) =>
+    `Assalomu alaykum! 👋\n\n*${shopName}* — shirinliklar do'koni.\n\n` +
+    `Pastdagi tugmani bosing: katalog shu yerning o'zida ochiladi. Tortni tanlaysiz, ` +
+    `narxini darhol ko'rasiz va bo'sh kunga buyurtma berasiz.`,
+  catalogPrompt: 'Katalog shu yerda 👇',
   cancelled: 'Buyurtma bekor qilindi. Yangi buyurtma uchun 🎂 tugmasini bosing.',
   unknownCommand: 'Tushunmadim. Quyidagi tugmalardan foydalaning.',
   sessionExpired: 'Sessiya eskirdi. Iltimos, buyurtmani qaytadan boshlang.',

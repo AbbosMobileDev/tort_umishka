@@ -138,6 +138,27 @@ export async function updateProduct(
   ]);
 }
 
+function mapOption(r: any): ProductOption {
+  return {
+    id: num(r.id),
+    productId: num(r.product_id),
+    groupName: r.group_name,
+    optionName: r.option_name,
+    extraPrice: num(r.extra_price),
+    priceType: r.price_type === 'per_kg' ? 'per_kg' : 'fixed',
+  };
+}
+
+/** Mini App butun katalogni bir marta oladi — mahsulot boshiga so'rov yubormaydi. */
+export async function listAllProductOptions(shopId: number): Promise<ProductOption[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM product_options WHERE shop_id = $1 ORDER BY product_id, sort_order, id`,
+    [shopId],
+  );
+  return rows.map(mapOption);
+}
+
 export async function listProductOptions(
   shopId: number,
   productId: number,

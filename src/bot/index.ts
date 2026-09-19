@@ -62,3 +62,31 @@ export async function setBotCommands(bot: Bot<BotContext>, shop: Shop): Promise<
     await set(at.adminCommands, { type: 'chat', chat_id: chatId });
   }
 }
+
+/**
+ * Chat oynasidagi menyu tugmasi. Mini App manzili bo'lsa — u bosilganda katalog
+ * darhol ochiladi. Admin chatlarida oddiy buyruqlar menyusi qoladi: panel o'z
+ * tugmalari bilan ishlaydi.
+ */
+export async function setMenuButton(
+  bot: Bot<BotContext>,
+  shop: Shop,
+  url: string | null,
+): Promise<void> {
+  try {
+    await bot.api.setChatMenuButton({
+      menu_button: url
+        ? { type: 'web_app', text: t.btnOpenApp, web_app: { url } }
+        : { type: 'commands' },
+    });
+  } catch (e) {
+    log.warn('Menyu tugmasini o\'rnatib bo\'lmadi', e instanceof Error ? e.message : e);
+    return;
+  }
+  const fresh = (await getShop(shop.id)) ?? shop;
+  for (const userId of fresh.adminUserIds) {
+    await bot.api
+      .setChatMenuButton({ chat_id: userId, menu_button: { type: 'commands' } })
+      .catch(() => undefined);
+  }
+}

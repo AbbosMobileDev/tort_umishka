@@ -10,6 +10,7 @@
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "start": "node dist/src/index.js",
     "dev": "tsx watch src/index.ts",
+    "dev:app": "tsx watch scripts/webapp-dev.ts",
     "seed": "tsx src/db/seed.ts",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:panel": "tsx scripts/panel-sim.ts",
