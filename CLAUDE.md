@@ -72,7 +72,7 @@ Mini App qoidalari:
 
 ```
 npm run typecheck
-npm test            # 37 ta test: narx (server va brauzer nusxasi), slot mantiqi, baza
+npm test            # 40 ta test: narx (server va brauzer nusxasi), slot mantiqi, baza
                     # tranzaksiyalari, katalog, hisobot, Mini App initData imzosi
 npm run smoke       # Telegramsiz: katalog, narx, buyurtma va xabar matnlari terminalda
 npm run smoke:panel # Telegramsiz: admin panel oqimlari (soxta update'lar handlerlardan o'tadi)

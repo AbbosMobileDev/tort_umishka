@@ -27,7 +27,7 @@ PGlite ishlatiladi. Serverda o'sha o'zgaruvchiga Neon/Supabase satri qo'yiladi.
 
 ```bash
 npm run typecheck
-npm test            # 37 ta test
+npm test            # 40 ta test
 npm run smoke       # Telegramsiz: katalog, narx, buyurtma matnlari
 npm run smoke:panel # Telegramsiz: admin panel oqimlari
 npm run dev:app     # Mini App ni brauzerda ochish (http://localhost:3000), bot ishga tushmaydi

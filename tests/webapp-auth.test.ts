@@ -11,8 +11,13 @@ import { verifyInitData } from '../src/web/auth.js';
 
 const TOKEN = '123456:AAAA-test-token';
 
-function sign(fields: Record<string, string>, token = TOKEN): string {
+function sign(
+  fields: Record<string, string>,
+  token = TOKEN,
+  opts: { skipSignatureInHash?: boolean } = {},
+): string {
   const pairs = Object.entries(fields)
+    .filter(([k]) => !(opts.skipSignatureInHash && k === 'signature'))
     .map(([k, v]) => `${k}=${v}`)
     .sort();
   const secret = createHmac('sha256', 'WebAppData').update(token).digest();
@@ -33,6 +38,29 @@ test('to\'g\'ri imzo — foydalanuvchi qaytadi', () => {
   assert.equal(user?.id, 42);
   assert.equal(user?.firstName, 'Dilnoza');
   assert.equal(user?.username, 'dilnoza');
+});
+
+/**
+ * Yangi Telegram mijozlari `signature` maydonini ham yuboradi. U `hash` hisobiga
+ * kiradi, lekin ba'zi mijozlar uni chiqarib tashlaydi — ikkala holat ham o'tishi kerak,
+ * aks holda foydalanuvchi ilovani ocholmaydi.
+ */
+test('signature bor: hash unga ham hisoblangan — qabul qilinadi', () => {
+  const fields = freshFields({ signature: 'abc_Ed25519_imzo' });
+  assert.equal(verifyInitData(sign(fields), TOKEN)?.id, 42);
+});
+
+test('signature bor: hash usiz hisoblangan — baribir qabul qilinadi', () => {
+  const fields = freshFields({ signature: 'abc_Ed25519_imzo' });
+  const initData = sign(fields, TOKEN, { skipSignatureInHash: true });
+  assert.equal(verifyInitData(initData, TOKEN)?.id, 42);
+});
+
+test('signature bor, lekin user o\'zgartirilgan — rad etiladi', () => {
+  const initData = sign(freshFields({ signature: 'abc_Ed25519_imzo' }));
+  const params = new URLSearchParams(initData);
+  params.set('user', JSON.stringify({ id: 999, first_name: 'Soxta' }));
+  assert.equal(verifyInitData(params.toString(), TOKEN), null);
 });
 
 test('ma\'lumot o\'zgartirilsa — rad etiladi', () => {

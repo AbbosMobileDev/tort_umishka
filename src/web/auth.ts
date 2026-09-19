@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { config } from '../config.js';
+import { config, log } from '../config.js';
 
 export interface WebAppUser {
   id: number;
@@ -19,48 +19,87 @@ function equalHex(a: string, b: string): boolean {
   }
 }
 
+export type InitDataFailure =
+  | 'empty'
+  | 'no_hash'
+  | 'bad_hash'
+  | 'expired'
+  | 'no_user'
+  | 'bad_user';
+
+export type InitDataResult =
+  | { ok: true; user: WebAppUser }
+  | { ok: false; reason: InitDataFailure };
+
+/**
+ * `hash` ni tekshiradi.
+ *
+ * Yangi Telegram mijozlari `initData` ga `signature` maydonini ham qo'shadi (uchinchi
+ * tomon uchun Ed25519 imzosi). Hujjatga ko'ra HMAC `hash` dan faqat `hash` ning o'zi
+ * chiqariladi, ya'ni `signature` hisobga kiradi — lekin ba'zi mijozlar aksincha
+ * qiladi. Shuning uchun ikkala variant ham sinaladi: bittasi mos kelsa yetarli.
+ * Ikkalasi ham bir xil maxfiy kalit bilan hisoblangani uchun bu xavfsizlikni
+ * pasaytirmaydi.
+ */
+function hashMatches(params: URLSearchParams, hash: string, botToken: string): boolean {
+  const secret = createHmac('sha256', 'WebAppData').update(botToken).digest();
+  for (const skipSignature of [false, true]) {
+    const pairs: string[] = [];
+    for (const [key, value] of params) {
+      if (key === 'hash') continue;
+      if (skipSignature && key === 'signature') continue;
+      pairs.push(`${key}=${value}`);
+    }
+    pairs.sort();
+    const computed = createHmac('sha256', secret).update(pairs.join('\n')).digest('hex');
+    if (equalHex(computed, hash)) return true;
+  }
+  return false;
+}
+
 /**
  * Telegram WebApp `initData` ni tekshiradi (Telegram Bot API, "Validating data").
  *
  * Mini App brauzerda ishlaydi, ya'ni har qanday odam API ga so'rov yubora oladi.
  * Foydalanuvchi ID si faqat shu imzo tekshirilgandan keyin ishonchli bo'ladi —
  * boshqa hech qayerda `user.id` ga ishonmaymiz.
+ *
+ * Xato sababi ham qaytadi: log'da "imzo noto'g'ri" bilan "umuman kelmadi" ni
+ * ajrata olish kerak (aks holda nosozlikni topib bo'lmaydi).
  */
-export function verifyInitData(initData: string, botToken: string): WebAppUser | null {
-  if (!initData || !botToken) return null;
+export function checkInitData(initData: string, botToken: string): InitDataResult {
+  if (!initData || !botToken) return { ok: false, reason: 'empty' };
 
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
-  if (!hash) return null;
-
-  const pairs: string[] = [];
-  for (const [key, value] of params) {
-    if (key === 'hash' || key === 'signature') continue;
-    pairs.push(`${key}=${value}`);
-  }
-  pairs.sort();
-
-  const secret = createHmac('sha256', 'WebAppData').update(botToken).digest();
-  const computed = createHmac('sha256', secret).update(pairs.join('\n')).digest('hex');
-  if (!equalHex(computed, hash)) return null;
+  if (!hash) return { ok: false, reason: 'no_hash' };
+  if (!hashMatches(params, hash, botToken)) return { ok: false, reason: 'bad_hash' };
 
   const authDate = Number(params.get('auth_date') ?? 0);
-  if (!Number.isFinite(authDate) || authDate <= 0) return null;
-  if (Date.now() / 1000 - authDate > MAX_AGE_SECONDS) return null;
+  if (!Number.isFinite(authDate) || authDate <= 0) return { ok: false, reason: 'expired' };
+  if (Date.now() / 1000 - authDate > MAX_AGE_SECONDS) return { ok: false, reason: 'expired' };
 
   const rawUser = params.get('user');
-  if (!rawUser) return null;
+  if (!rawUser) return { ok: false, reason: 'no_user' };
   try {
     const user = JSON.parse(rawUser) as { id?: number; first_name?: string; username?: string };
-    if (typeof user.id !== 'number') return null;
+    if (typeof user.id !== 'number') return { ok: false, reason: 'bad_user' };
     return {
-      id: user.id,
-      firstName: user.first_name ?? null,
-      username: user.username ?? null,
+      ok: true,
+      user: {
+        id: user.id,
+        firstName: user.first_name ?? null,
+        username: user.username ?? null,
+      },
     };
   } catch {
-    return null;
+    return { ok: false, reason: 'bad_user' };
   }
+}
+
+export function verifyInitData(initData: string, botToken: string): WebAppUser | null {
+  const result = checkInitData(initData, botToken);
+  return result.ok ? result.user : null;
 }
 
 /**
@@ -69,12 +108,14 @@ export function verifyInitData(initData: string, botToken: string): WebAppUser |
  * BOT_MODE=webhook bo'lgani uchun bu yo'l yopiq.
  */
 export function authenticate(initData: string | undefined, botToken: string): WebAppUser | null {
-  if (initData) {
-    const user = verifyInitData(initData, botToken);
-    if (user) return user;
-  }
+  const result = checkInitData(initData ?? '', botToken);
+  if (result.ok) return result.user;
+
   if (config.mode === 'polling' && config.webappDevUserId) {
     return { id: config.webappDevUserId, firstName: null, username: null };
   }
+  // Sabab log'ga chiqadi: 'empty' — sahifa Telegramdan tashqarida ochilgan,
+  // 'bad_hash' — token mos emas yoki imzo buzilgan, 'expired' — eski sessiya.
+  log.warn(`Mini App: initData tasdiqlanmadi (${result.reason})`);
   return null;
 }
